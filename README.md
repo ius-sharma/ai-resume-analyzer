@@ -1,39 +1,61 @@
-# AI-RESUME-ANALYZER
+# 🚀 AI Resume Analyzer
 
-## Project Overview
+An AI-powered web application that analyzes resumes and provides structured feedback using LLM APIs.
 
-AI-RESUME-ANALYZER is a full-stack application designed to help users analyze and improve their resumes using AI-driven insights. The project features a React frontend and a Node.js/Express backend.
+---
 
-## Features
+## ✨ Features
 
-- Upload and analyze resumes
-- AI-powered feedback and suggestions
-- User-friendly interface
+* 📄 Upload Resume (PDF)
+* 🤖 AI-powered Analysis
+* 📊 Resume Score (out of 100)
+* 🧠 Missing Skills Detection
+* 🚀 Improvement Suggestions
+* 🎨 Modern UI (React + Tailwind)
 
-## Technologies Used
+---
 
-- Frontend: React
-- Backend: Node.js, Express
+## 🛠 Tech Stack
 
-## Getting Started
+* **Frontend:** React, Tailwind CSS
+* **Backend:** Node.js, Express
+* **AI:** Groq (LLaMA 3)
+* **PDF Parsing:** pdf-parse
 
-### Prerequisites
+---
 
-- Node.js and npm installed
+## 🌐 Live Demo
 
-### Installation
+👉 Frontend: https://ai-resume-analyzer-orcin-rho.vercel.app/
+👉 Backend: https://ai-resume-analyzer-fixb.onrender.com
 
-1. Clone the repository
-2. Install dependencies for both frontend and backend
-3. Start the backend and frontend servers
+---
 
-### Usage
+## ⚙️ Run Locally
 
-- Navigate to the frontend URL in your browser
-- Upload your resume and view analysis results
+### Backend
 
-## Screenshots
+cd backend
+npm install
+node server.js
 
-## License
+### Frontend
 
-MIT
+cd frontend
+npm install
+npm start
+
+---
+
+## 💡 Future Improvements - ( Soon )
+
+* User authentication
+* Resume history
+* Better AI scoring system
+* Drag & drop UI enhancements
+
+---
+
+## 👨‍💻 Author
+
+Ayush Sharma - Keep Improving Keep Grinding
