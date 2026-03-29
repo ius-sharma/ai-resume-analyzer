@@ -20,7 +20,10 @@ function App() {
 
     try {
       setLoading(true);
-      const res = await axios.post("http://localhost:5000/upload", formData);
+      const res = await axios.post(
+        "https://ai-resume-analyzer-fixb.onrender.com/upload",
+        formData,
+      );
       setResult(res.data.analysis);
     } catch (err) {
       setError("Failed to analyze resume.");
