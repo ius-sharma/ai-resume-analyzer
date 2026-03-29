@@ -27,6 +27,7 @@ An AI-powered web application that analyzes resumes and provides structured feed
 ## 🌐 Live Demo
 
 👉 Frontend: https://ai-resume-analyzer-orcin-rho.vercel.app/
+
 👉 Backend: https://ai-resume-analyzer-fixb.onrender.com
 
 ---
