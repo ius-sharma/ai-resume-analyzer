@@ -1,13 +1,38 @@
 // Pro-level AI Resume Analyzer Frontend
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+
+function AnimatedScore({ target }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const duration = 1500;
+    const step = 16;
+    const increment = target / (duration / step);
+
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= target) {
+        setDisplay(target);
+        clearInterval(timer);
+      } else {
+        setDisplay(Math.floor(start));
+      }
+    }, step);
+
+    return () => clearInterval(timer);
+  }, [target]);
+
+  return <p className="mt-2 text-lg font-bold">{display}/100</p>;
+}
 
 function App() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const fileInputRef = React.useRef();
+  const fileInputRef = useRef();
 
   const handleUpload = async () => {
     setError("");
@@ -37,6 +62,14 @@ function App() {
   const handleDrop = (e) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && droppedFile.type !== "application/pdf") {
+      setError("Only PDF files are allowed!");
+      return;
+    }
+    if (droppedFile && droppedFile.size > 5 * 1024 * 1024) {
+      setError("File size must be less than 5MB!");
+      return;
+    }
     setFile(droppedFile);
     setError("");
   };
@@ -73,9 +106,21 @@ function App() {
         <input
           ref={fileInputRef}
           type="file"
+          accept=".pdf"
           className="hidden"
           onChange={(e) => {
-            setFile(e.target.files[0]);
+            const selected = e.target.files[0];
+            if (selected && selected.type !== "application/pdf") {
+              setError("Only PDF files are allowed!");
+              setFile(null);
+              return;
+            }
+            if (selected && selected.size > 5 * 1024 * 1024) {
+              setError("File size must be less than 5MB!");
+              setFile(null);
+              return;
+            }
+            setFile(selected);
             setError("");
           }}
         />
@@ -91,9 +136,10 @@ function App() {
             e.stopPropagation();
             handleUpload();
           }}
-          className="mt-4 w-full py-2 rounded-lg font-semibold 
+          disabled={loading}
+          className={`mt-4 w-full py-2 rounded-lg font-semibold 
           bg-gradient-to-r from-blue-500 to-purple-500 
-          hover:opacity-90 transition"
+          transition ${loading ? "opacity-50 cursor-not-allowed" : "hover:opacity-90 cursor-pointer"}`}
         >
           {loading ? "Analyzing..." : "Analyze Resume"}
         </button>
@@ -105,35 +151,59 @@ function App() {
           {/* Score */}
           <div className="backdrop-blur-lg bg-white/10 border border-white/20 p-6 rounded-xl">
             <h2 className="text-xl font-semibold mb-2">Score</h2>
-
-            <div className="w-full bg-gray-700 h-3 rounded-full">
+            <div className="w-full bg-gray-700 h-3 rounded-full overflow-hidden">
               <div
-                className="bg-gradient-to-r from-green-400 to-emerald-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${result.score}%` }}
+                className="bg-gradient-to-r from-green-400 to-emerald-500 h-3 rounded-full"
+                style={{
+                  width: `${result.score}%`,
+                  transition: "width 1.5s ease-in-out",
+                }}
               ></div>
             </div>
-
-            <p className="mt-2 text-lg font-bold">{result.score}/100</p>
+            <AnimatedScore target={result.score} />
           </div>
 
           {/* Missing Skills */}
           <div className="backdrop-blur-lg bg-white/10 border border-white/20 p-6 rounded-xl">
             <h3 className="text-blue-400 font-semibold mb-2">Missing Skills</h3>
-            <ul className="list-disc list-inside text-gray-300">
-              {result.missing_skills.map((skill, i) => (
-                <li key={i}>{skill}</li>
-              ))}
-            </ul>
+            {result.missing_skills.length === 0 ? (
+              <p className="text-green-400 text-sm">
+                🎉 No missing skills found — great resume!
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {result.missing_skills.map((skill, i) => (
+                  <span
+                    key={i}
+                    className="px-3 py-1 rounded-full text-sm font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Improvements */}
           <div className="backdrop-blur-lg bg-white/10 border border-white/20 p-6 rounded-xl">
             <h3 className="text-green-400 font-semibold mb-2">Improvements</h3>
-            <ul className="list-disc list-inside text-gray-300">
-              {result.improvements.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
+            {result.improvements.length === 0 ? (
+              <p className="text-green-400 text-sm">
+                ✅ No improvements needed — your resume looks great!
+              </p>
+            ) : (
+              <ul className="space-y-2 mt-2">
+                {result.improvements.map((item, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-gray-300 text-sm"
+                  >
+                    <span className="text-green-400 mt-0.5">→</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}

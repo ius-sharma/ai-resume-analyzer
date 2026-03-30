@@ -7,21 +7,43 @@ const cors = require("cors");
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
 const axios = require("axios");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { error: "Too many requests. Please wait a minute and try again." },
+});
+
+app.use(helmet());
+app.use(
+  cors({
+    origin: "https://ai-resume-analyzer-orcin-rho.vercel.app",
+    methods: ["GET", "POST"],
+  }),
+);
 app.use(express.json());
+app.use("/upload", limiter);
 
-const upload = multer({ dest: "uploads/" });
+const upload = multer({
+  dest: "uploads/",
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype !== "application/pdf") {
+      return cb(new Error("Only PDF files are allowed!"));
+    }
+    cb(null, true);
+  },
+});
 
-// 🔹 Home route
 app.get("/", (req, res) => {
   res.send("Server is running 🚀");
 });
 
-// 🔹 AI Function
 async function analyzeResume(text) {
   try {
     const response = await axios.post(
@@ -57,12 +79,11 @@ ${text}
           Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
           "Content-Type": "application/json",
         },
+        timeout: 30000,
       },
     );
 
     const raw = response.data.choices[0].message.content;
-
-    // 🔥 Clean AI response
     const cleaned = raw.replace(/```json|```/g, "").trim();
 
     let parsed;
@@ -70,9 +91,22 @@ ${text}
     try {
       parsed = JSON.parse(cleaned);
     } catch (e) {
-      parsed = {
-        error: "Invalid JSON from AI",
-        raw,
+      return {
+        score: 0,
+        missing_skills: [],
+        improvements: ["AI could not analyze the resume. Please try again."],
+      };
+    }
+
+    if (
+      typeof parsed.score !== "number" ||
+      !Array.isArray(parsed.missing_skills) ||
+      !Array.isArray(parsed.improvements)
+    ) {
+      return {
+        score: 0,
+        missing_skills: [],
+        improvements: ["AI returned incomplete data. Please try again."],
       };
     }
 
@@ -83,21 +117,17 @@ ${text}
   }
 }
 
-// 🔹 Upload + Analyze Route
 app.post("/upload", upload.single("resume"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // Step 1: Read PDF
     const dataBuffer = fs.readFileSync(req.file.path);
-
-    // Step 2: Extract text
     const data = await pdfParse(dataBuffer);
-
-    // Step 3: Analyze with AI
     const analysis = await analyzeResume(data.text);
+
+    fs.unlinkSync(req.file.path);
 
     res.json({
       message: "Analysis complete ✅",
@@ -109,7 +139,6 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
   }
 });
 
-// 🔹 Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
